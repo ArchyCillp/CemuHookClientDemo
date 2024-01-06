@@ -107,10 +107,18 @@ def parse_dsu_response(data:bytes):
         print()
     return gyro_pitch, gyro_yaw, gyro_roll
 
-def moveMouse(gyro_pitch, gyro_yaw, gyro_roll,smooth):
-    pitch_speed = -4.0 / smooth
-    yaw_speed = 8.0 / smooth
-    win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, int(gyro_yaw * yaw_speed), int(gyro_pitch * pitch_speed),0,0)
+def moveMouse(gyro_pitch, gyro_yaw, gyro_roll):
+    if abs(gyro_yaw) < SLOW_THRESHOLD and abs(gyro_pitch) < SLOW_THRESHOLD:
+        pitch_speed = -VERTICAL_SENSITIVITY * SLOW_MOVE_FACTOR 
+        yaw_speed = HORIZONTAL_SENSITIVITY * SLOW_MOVE_FACTOR
+        win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, int(gyro_yaw * yaw_speed), int(gyro_pitch * pitch_speed),0,0)
+        print("move slow\t\t{} {}".format(int(gyro_yaw * yaw_speed), int(gyro_pitch * pitch_speed)))
+    else:
+        pitch_speed = -VERTICAL_SENSITIVITY 
+        yaw_speed = HORIZONTAL_SENSITIVITY
+        win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, int(gyro_yaw * yaw_speed), int(gyro_pitch * pitch_speed),0,0)
+        print("move fast\t\t{} {}".format(int(gyro_yaw * yaw_speed), int(gyro_pitch * pitch_speed)))
+
 
 def main():
     # Create a UDP socket at client side
@@ -128,8 +136,7 @@ def main():
         if (current_time - last_parse_time > update_interval):
             res = parse_dsu_response(msg_from_server[0])
             if CONTROL_MOUSE:
-                for i in range(smooth):
-                    moveMouse(*res, smooth=smooth)
+                moveMouse(*res)
             last_parse_time = current_time
 
 
