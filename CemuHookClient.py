@@ -107,17 +107,26 @@ def parse_dsu_response(data:bytes):
         print()
     return gyro_pitch, gyro_yaw, gyro_roll
 
+MOVE_MODE = 0
+def move_mode_det(gyro_pitch, gyro_yaw, gyro_roll):
+    global MOVE_MODE
+    print(gyro_yaw, gyro_pitch)
+    if abs(gyro_yaw) > FAST_THRESHOLD or abs(gyro_pitch) > FAST_THRESHOLD:
+        MOVE_MODE = 1
+    elif abs(gyro_yaw) < SLOW_THRESHOLD and abs(gyro_pitch) < SLOW_THRESHOLD:
+        MOVE_MODE = 0
+    
 def moveMouse(gyro_pitch, gyro_yaw, gyro_roll):
-    if abs(gyro_yaw) < SLOW_THRESHOLD and abs(gyro_pitch) < SLOW_THRESHOLD:
+    if MOVE_MODE == 0:
         pitch_speed = -VERTICAL_SENSITIVITY * SLOW_MOVE_FACTOR 
         yaw_speed = HORIZONTAL_SENSITIVITY * SLOW_MOVE_FACTOR
         win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, int(gyro_yaw * yaw_speed), int(gyro_pitch * pitch_speed),0,0)
-        print("move slow\t\t{} {}".format(int(gyro_yaw * yaw_speed), int(gyro_pitch * pitch_speed)))
+        print("debug move slow\t\t{} {}".format(int(gyro_yaw * yaw_speed), int(gyro_pitch * pitch_speed)))
     else:
         pitch_speed = -VERTICAL_SENSITIVITY 
         yaw_speed = HORIZONTAL_SENSITIVITY
         win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, int(gyro_yaw * yaw_speed), int(gyro_pitch * pitch_speed),0,0)
-        print("move fast\t\t{} {}".format(int(gyro_yaw * yaw_speed), int(gyro_pitch * pitch_speed)))
+        print("debug move fast\t\t{} {}".format(int(gyro_yaw * yaw_speed), int(gyro_pitch * pitch_speed)))
 
 
 def main():
@@ -136,6 +145,7 @@ def main():
         if (current_time - last_parse_time > update_interval):
             res = parse_dsu_response(msg_from_server[0])
             if CONTROL_MOUSE:
+                move_mode_det(*res)
                 moveMouse(*res)
             last_parse_time = current_time
 
